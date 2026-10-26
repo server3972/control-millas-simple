@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<title>Control de Millas — Un tramo</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#152236;--line:#304058;--text:#eef5ff;--muted:#c0cfe0;--green:#16a34a;--amber:#fbbf24;--blue:#2475a7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:980px;margin:auto;padding:16px 14px 64px}header{padding:18px 10px 20px}h1{font-size:clamp(1.6rem,5vw,2.3rem);margin:0}header p{color:var(--muted);margin:6px 0 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:17px;padding:18px;margin-bottom:15px;box-shadow:0 8px 23px #0002}h2{margin:0 0 13px;font-size:1.2rem}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.full{grid-column:1/-1}label{display:block;font-size:.91rem;font-weight:650;color:#dce7f5;margin-bottom:5px}
+input,select,textarea{width:100%;border:1px solid #45607c;border-radius:10px;background:#0b1829;padding:12px;color:white;font:inherit;min-height:45px}textarea{resize:vertical;min-height:132px}input:focus,select:focus,textarea:focus{outline:2px solid #38bdf8;outline-offset:1px}
+button,.filebtn{font:inherit;font-weight:700;background:#33485f;color:white;border:0;border-radius:11px;padding:12px 15px;min-height:45px;cursor:pointer}button:focus-visible{outline:3px solid #38bdf8;outline-offset:2px}.primary{background:var(--green)}.secondary{background:var(--blue)}.danger{background:#8c3232}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.buttons>*{flex:1 1 150px}.filebtn{display:inline-flex;align-items:center;justify-content:center}.filebtn input{display:none}
+.muted{color:var(--muted);font-size:.9rem}.notice{padding:12px;background:#223753;border-radius:10px;margin-bottom:12px}.total{font-size:1.45rem;font-weight:850;background:#092b21;border:1px solid #267f56;border-radius:12px;padding:13px;margin-top:14px}.warn{background:#3d3014;border-color:#b88a29}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:15px}.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}.stat span{display:block;color:var(--muted);font-size:.8rem}.stat b{font-size:1.3rem}.trip{border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;background:#101b2d;overflow-wrap:anywhere}.trip-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.trip strong{font-size:1.05rem}.trip .status{color:#b0f4c2;font-weight:800}.trip .status.pending{color:#f6c765}.trip p{margin:7px 0;color:#d3e0ed;font-size:.91rem}.trip .buttons{margin-top:10px}.trip .buttons>*{min-height:40px;padding:9px}.tag{display:inline-block;color:#ffe29d;border:1px solid #aa7f29;border-radius:99px;font-size:.75rem;padding:2px 8px;margin-left:6px}.toolbar{display:flex;gap:10px}.toolbar input{flex:1}.small{font-size:.84rem}details{margin-top:10px}summary{cursor:pointer;color:#b7dffc;font-weight:650}.hidden{display:none!important}
+@media(max-width:640px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.stat{padding:9px}.stat b{font-size:1.05rem}.card{padding:13px}main{padding:10px 10px 40px}.buttons>*{flex:1 1 100%}}
+</style>
+</head>
+<body>
+<main>
+<header><h1>🚛 Control de Millas</h1><p>Un viaje, un tramo. Sin tanta chimichanga. Funciona sin conexión.</p></header>
+<section class="stats" aria-label="Resumen"><div class="stat"><span>Viajes</span><b id="nViajes">0</b></div><div class="stat"><span>Millas</span><b id="nMillas">0</b></div><div class="stat"><span>Pendientes</span><b id="nPend">0</b></div></section>
+<section class="card" id="formCard">
+<h2 id="formHeading">Nuevo viaje</h2>
+<div class="notice small">No necesitas rellenar otros tramos. Si aún no conoces el odómetro final, deja ese espacio vacío y guarda el viaje como <b>Pendiente</b>.</div>
+<input type="hidden" id="editId">
+<div class="grid">
+<div><label for="fechaInicio">Fecha de salida</label><input id="fechaInicio" type="date"></div>
+<div><label for="fechaFin">Fecha de llegada (opcional)</label><input id="fechaFin" type="date"></div>
+<div><label for="origen">Origen</label><input id="origen" placeholder="Nogales, AZ" autocomplete="off"></div>
+<div><label for="destino">Destino</label><input id="destino" placeholder="Houston, TX" autocomplete="off"></div>
+<div><label for="inicio">Odómetro inicial</label><input id="inicio" type="number" min="0" step="1" inputmode="numeric" placeholder="125300"></div>
+<div><label for="fin">Odómetro final (opcional)</label><input id="fin" type="number" min="0" step="1" inputmode="numeric" placeholder="Al llegar"></div>
+<div><label for="caja">Número de caja (opcional)</label><input id="caja" placeholder="Ej. 48321" autocomplete="off"></div>
+<div><label for="condicion">Condiciones de la caja</label><select id="condicion"><option value="">Sin revisar / no registrado</option><option>Sin novedades</option><option>Con observaciones</option><option>Requiere revisión</option></select></div>
+<div class="full"><label for="referencia">Referencia / carga (opcional)</label><input id="referencia" placeholder="Número de carga o cliente"></div>
+<div class="full"><label for="notas">Observaciones (opcional)</label><textarea id="notas" rows="5" placeholder="Estado de la caja, daños encontrados, tráfico, direcciones, detalles para tu reporte DOT..."></textarea></div>
+</div>
+<div id="totalForm" class="total" role="status" aria-live="polite">Millas: Pendiente</div>
+<div class="buttons"><button class="primary" id="saveBtn" type="button">Guardar viaje</button><button id="clearBtn" type="button">Nuevo / limpiar</button></div>
+</section>
+<section class="card">
+<h2>Historial</h2>
+<div class="toolbar"><input id="buscar" placeholder="Buscar ciudad, caja o carga" aria-label="Buscar historial"></div>
+<div id="viajesLista"></div>
+</section>
+<section class="card">
+<h2>Compartir y respaldar</h2>
+<div class="grid"><div><label for="correo">Correo de la contadora (opcional)</label><input type="email" id="correo" placeholder="correo@ejemplo.com" autocomplete="email"></div><div><label for="nombreCuenta">Nombre en el reporte (opcional)</label><input id="nombreCuenta" placeholder="Chofer" autocomplete="name"></div></div>
+<p class="muted">El botón «Correo» abre tu aplicación de correo con el reporte preparado. Revisa y pulsa Enviar tú mismo; la página no lo envía automáticamente.</p>
+<div class="buttons"><button id="reportBtn" class="secondary">Compartir resumen</button><button id="mailAllBtn">Correo: resumen</button><button id="backupBtn">Descargar respaldo JSON</button><label class="filebtn">Importar respaldo JSON<input id="importFile" type="file" accept=".json,application/json"></label></div>
+<details><summary>Seguridad de mis datos</summary><p class="muted">Tus viajes se guardan en este navegador mediante localStorage. No se sincronizan entre teléfonos ni se envían a un servidor. Descarga un respaldo periódicamente. Esta versión utiliza un almacenamiento nuevo y conserva los datos de la versión V2, si están disponibles en este mismo navegador y sitio web. Los datos antiguos con varios tramos se conservan completos en su registro histórico.</p></details>
+</section>
+</main>
+<script>
+'use strict';
+const KEY='control_millas_simple_v3', OLD='control_millas_v2',OLD1='control_millas_v1',BK='control_millas_simple_v3_backup',PREF='control_millas_simple_v3_pref';
+let viajes=[];
+const el=id=>document.getElementById(id);
+const hoy=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const uid=()=> typeof crypto!=='undefined' && crypto.randomUUID ? crypto.randomUUID() : 'v'+Date.now()+Math.random().toString(36).slice(2);
+const n=(x)=>Number.isFinite(Number(x))?Number(x):0;
+const fmt=(x)=>n(x).toLocaleString('en-US');
+const escapeHtml=(x)=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function tramosDe(v){return Array.isArray(v.tramos)&&v.tramos.length?v.tramos:[{origen:v.origen||'',destino:v.destino||'',millasInicio:n(v.millasInicio),millasFin:n(v.millasFin)}]}
+function esCompleto(v){return !v.pendiente && !!n(v.millasFin) && n(v.millasFin)>=n(v.millasInicio)}
+function estado(v){const t=tramosDe(v);return !!v.pendiente || t.some(x=>n(x.millasInicio)>0 && !n(x.millasFin));}
+function total(v){if(typeof v.millasTotal==='number' && Number.isFinite(v.millasTotal))return v.millasTotal;return tramosDe(v).reduce((a,t)=>a+(n(t.millasFin)>0&&n(t.millasFin)>=n(t.millasInicio)?n(t.millasFin)-n(t.millasInicio):0),0)}
+function migrar(){if(localStorage.getItem(KEY)!==null)return;
+ for(const k of [OLD,OLD1]){try{let src=JSON.parse(localStorage.getItem(k)||'null');if(!Array.isArray(src)&&src?.viajes)src=src.viajes;if(Array.isArray(src)&&src.length){const copy=src.map(v=>({...v,id:v.id||uid()}));localStorage.setItem(KEY,JSON.stringify(copy));return}}catch(e){console.warn('No se pudo importar',k,e)}}
+ localStorage.setItem(KEY,'[]');}
+function cargar(){try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');viajes=Array.isArray(v)?v:[]}catch(e){viajes=[];alert('Hubo un problema leyendo el historial. Si tienes un backup JSON, consérvalo para restaurarlo.')}}
+function persistir(){try{const prev=localStorage.getItem(KEY);if(prev!==null)localStorage.setItem(BK,prev);localStorage.setItem(KEY,JSON.stringify(viajes));return true}catch(e){alert('No se pudo guardar. Verifica el espacio del navegador y descarga un respaldo.');return false}}
+function leer(){return {id:el('editId').value||uid(),fechaInicio:el('fechaInicio').value,fechaFin:el('fechaFin').value,origen:el('origen').value.trim(),destino:el('destino').value.trim(),millasInicio:el('inicio').value===''?0:Number(el('inicio').value),millasFin:el('fin').value===''?0:Number(el('fin').value),numeroCaja:el('caja').value.trim(),condicionesCaja:el('condicion').value,referencia:el('referencia').value.trim(),notas:el('notas').value.trim()}}
+function calculo(){const i=el('inicio').value,f=el('fin').value,t=el('totalForm');if(f===''||i===''){t.className='total warn';t.textContent='Millas: Pendiente (puedes guardar)';return}const delta=Number(f)-Number(i);t.className=delta<0?'total warn':'total';t.textContent=delta<0?'Revisa el odómetro final: es menor que el inicial':`Total: ${fmt(delta)} millas`}
+function guardar(){const v=leer();if(!v.fechaInicio||!v.origen||!v.destino){alert('Necesitamos fecha de salida, origen y destino.');return}if(el('inicio').value!=='' && (v.millasInicio<0||!Number.isFinite(v.millasInicio))){alert('Revisa el odómetro inicial.');return}if(el('fin').value!==''&&(v.millasFin<0||!Number.isFinite(v.millasFin))){alert('Revisa el odómetro final.');return}if(el('inicio').value===''&&el('fin').value!==''){alert('Para completar las millas, escribe también el odómetro inicial.');return}if(el('fin').value!==''&&v.millasFin<v.millasInicio){alert('El odómetro final no puede ser menor que el inicial.');return}if(v.fechaFin && v.fechaFin<v.fechaInicio){alert('La fecha de llegada no puede ser anterior a la salida.');return}
+ const pendiente=el('fin').value===''||el('inicio').value==='';const distancia=pendiente?0:v.millasFin-v.millasInicio;
+ if(distancia>1800&&!confirm('La distancia supera 1,800 millas. ¿Es correcta?'))return;
+ const anterior=viajes.find(x=>x.id===v.id);v.creado=anterior?.creado||new Date().toISOString();v.actualizado=new Date().toISOString();v.version=3;v.pendiente=pendiente;v.millasTotal=distancia;v.tipoViaje=anterior?.tipoViaje||'Trabajo';v.tramos=[{id:anterior?.tramos?.[0]?.id||uid(),origen:v.origen,destino:v.destino,millasInicio:v.millasInicio,millasFin:v.millasFin}];
+ const nuevo=anterior?viajes.map(x=>x.id===v.id?v:x):[...viajes,v];const pre=viajes;viajes=nuevo;if(!persistir()){viajes=pre;return}render();limpiar(false);alert(pendiente?'Viaje guardado como PENDIENTE. No se inventaron millas.':'Viaje guardado. Total: '+fmt(distancia)+' mi');}
+function limpiar(sc=true){['editId','origen','destino','inicio','fin','caja','referencia','notas'].forEach(id=>el(id).value='');el('condicion').value='';el('fechaInicio').value=hoy();el('fechaFin').value='';el('formHeading').textContent='Nuevo viaje';calculo();if(sc)el('formCard').scrollIntoView({behavior:'smooth'});}
+function editar(id){const v=viajes.find(x=>x.id===id);if(!v)return;const ts=tramosDe(v);if(ts.length>1){alert('Este viaje antiguo tiene varios tramos. Se conserva completo en el historial. Para no perder datos, no se modifica desde el formulario simplificado.');return}
+ for(const k of ['fechaInicio','fechaFin','origen','destino','referencia','notas'])el(k).value=v[k]||'';el('editId').value=v.id;el('inicio').value=n(v.millasInicio)||'';el('fin').value=n(v.millasFin)||'';el('caja').value=v.numeroCaja||'';el('condicion').value=v.condicionesCaja||'';el('formHeading').textContent='Editar viaje';calculo();el('formCard').scrollIntoView({behavior:'smooth'});}
+function borrar(id){if(!confirm('¿Eliminar este registro?'))return;const previo=viajes;viajes=viajes.filter(v=>v.id!==id);if(!persistir()){viajes=previo;return}render();}
+function reporte(v){const ts=tramosDe(v);let s=`CONTROL DE MILLAS\nFecha de salida: ${v.fechaInicio||'No registrada'}\nFecha de llegada: ${v.fechaFin||'Pendiente'}\nOrigen: ${v.origen||ts[0]?.origen||'-'}\nDestino: ${v.destino||ts.at(-1)?.destino||'-'}\n`;
+ if(ts.length>1){s+='Tramos originales:\n'+ts.map((t,i)=>`${i+1}. ${t.origen||'-'} → ${t.destino||'-'} | ${fmt(t.millasInicio)} → ${t.millasFin?fmt(t.millasFin):'PENDIENTE'}`).join('\n')+'\n';}
+ else{s+=`Odómetro inicial: ${v.millasInicio?fmt(v.millasInicio):'Pendiente'}\nOdómetro final: ${v.millasFin?fmt(v.millasFin):'Pendiente'}\n`;}
+ s+=`Millas: ${estado(v)?'Pendiente (registradas: '+fmt(total(v))+')':fmt(total(v))}\n`;
+ if(v.numeroCaja)s+=`Número de caja: ${v.numeroCaja}\n`;if(v.condicionesCaja)s+=`Condiciones de la caja: ${v.condicionesCaja}\n`;if(v.referencia)s+=`Referencia: ${v.referencia}\n`;if(v.notas)s+=`Observaciones: ${v.notas}\n`;return s;}
+function reporteGeneral(){const s=[...viajes].sort((a,b)=>String(b.fechaInicio||'').localeCompare(String(a.fechaInicio||'')));return (el('nombreCuenta').value.trim()||'Control de Millas')+'\n\n'+`Viajes: ${s.length}\nMillas registradas: ${fmt(s.reduce((a,v)=>a+total(v),0))}\nPendientes: ${s.filter(estado).length}\n\n`+s.map(reporte).join('\n-------------------------\n');}
+function copia(t){if(navigator.clipboard?.writeText){return navigator.clipboard.writeText(t).then(()=>alert('Reporte copiado para pegar en tu correo.')).catch(()=>prompt('Copia el reporte:',t))}prompt('Copia el reporte:',t);return Promise.resolve()}
+async function compartir(t){if(navigator.share){try{await navigator.share({title:'Control de Millas',text:t});return}catch(e){if(e?.name==='AbortError')return}}await copia(t)}
+function correo(t){const email=el('correo').value.trim();if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){alert('Revisa el correo de la contadora.');return}const subject=encodeURIComponent('Reporte de millas');const body=encodeURIComponent(t);if(body.length>12000){alert('El resumen es muy largo para abrirlo directamente por correo. Usa Compartir resumen o envía el respaldo JSON adjunto.');return}location.href=`mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`;}
+function exportar(){const dato={app:'Control de Millas',version:3,fechaBackup:new Date().toISOString(),viajes};const blob=new Blob([JSON.stringify(dato,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='respaldo-control-millas-'+hoy()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);}
+async function importar(e){const file=e.target.files?.[0];if(!file)return;try{const dato=JSON.parse(await file.text());const arr=Array.isArray(dato)?dato:dato.viajes;if(!Array.isArray(arr))throw Error('formato');const ids=new Set(viajes.map(x=>x.id));let added=0;const nuevo=[...viajes];for(const obj of arr){if(!obj||typeof obj!=='object')continue;const id=obj.id||uid();if(ids.has(id))continue;ids.add(id);nuevo.push({...obj,id});added++}if(!confirm('Agregar '+added+' viajes nuevos, sin eliminar el historial actual?'))return;const old=viajes;viajes=nuevo;if(!persistir()){viajes=old;return}render();alert('Se agregaron '+added+' viajes.')}catch(err){alert('No pude abrir ese respaldo JSON.')}finally{e.target.value=''}}
+function render(){el('nViajes').textContent=fmt(viajes.length);el('nMillas').textContent=fmt(viajes.reduce((a,v)=>a+total(v),0));el('nPend').textContent=fmt(viajes.filter(estado).length);
+ const q=el('buscar').value.toLowerCase().trim(),arr=[...viajes].filter(v=>JSON.stringify(v).toLowerCase().includes(q)).sort((a,b)=>String(b.fechaInicio||'').localeCompare(String(a.fechaInicio||'')));
+ el('viajesLista').innerHTML=arr.length?arr.map(v=>{const ts=tramosDe(v),pend=estado(v),old=ts.length>1;return `<article class="trip"><div class="trip-head"><strong>${escapeHtml(v.origen||ts[0]?.origen||'Sin origen')} → ${escapeHtml(v.destino||ts.at(-1)?.destino||'Sin destino')}${old?'<span class="tag">Registro anterior</span>':''}</strong><span class="status ${pend?'pending':''}">${pend?'Pendiente · ':''}${fmt(total(v))} mi</span></div><p>${escapeHtml(v.fechaInicio||'-')} → ${escapeHtml(v.fechaFin||'Sin fecha final')}<br>Odómetro: ${v.millasInicio?fmt(v.millasInicio):'—'} → ${v.millasFin?fmt(v.millasFin):'—'}${v.numeroCaja?'<br>Caja: '+escapeHtml(v.numeroCaja):''}${v.condicionesCaja?'<br>Condiciones: '+escapeHtml(v.condicionesCaja):''}${v.referencia?'<br>Carga: '+escapeHtml(v.referencia):''}${old?'<br>Tramos conservados: '+ts.length:''}${v.notas?'<br>Observaciones: '+escapeHtml(v.notas).replaceAll('\n','<br>'):''}</p><div class="buttons">${old?'':`<button data-edit="${escapeHtml(v.id)}">Editar</button>`}<button class="secondary" data-share="${escapeHtml(v.id)}">Compartir</button><button data-mail="${escapeHtml(v.id)}">Correo</button><button class="danger" data-delete="${escapeHtml(v.id)}">Borrar</button></div></article>`}).join(''):'<p class="muted">No hay viajes para mostrar.</p>';
+}
+function init(){try{migrar();cargar();const p=JSON.parse(localStorage.getItem(PREF)||'{}');el('correo').value=p.correo||'';el('nombreCuenta').value=p.nombre||''}catch(e){alert('El navegador impide acceder al almacenamiento local. Revisa sus permisos.')}limpiar(false);render();el('saveBtn').addEventListener('click',guardar);el('clearBtn').addEventListener('click',()=>limpiar());for(const id of ['inicio','fin'])el(id).addEventListener('input',calculo);el('buscar').addEventListener('input',render);el('reportBtn').addEventListener('click',()=>compartir(reporteGeneral()));el('mailAllBtn').addEventListener('click',()=>correo(reporteGeneral()));el('backupBtn').addEventListener('click',exportar);el('importFile').addEventListener('change',importar);
+ for(const id of ['correo','nombreCuenta'])el(id).addEventListener('change',()=>{try{localStorage.setItem(PREF,JSON.stringify({correo:el('correo').value,nombre:el('nombreCuenta').value}))}catch(e){}});
+ el('viajesLista').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const action=['edit','share','mail','delete'].find(x=>b.hasAttribute('data-'+x));if(!action)return;const id=b.getAttribute('data-'+action);const v=viajes.find(x=>x.id===id);if(!v)return;if(action==='edit')editar(id);if(action==='share')compartir(reporte(v));if(action==='mail')correo(reporte(v));if(action==='delete')borrar(id)});
+}
+init();
+</script>
+</body>
+</html>
